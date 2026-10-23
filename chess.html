@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Shaxmat</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#faf8ef;color:#776e65;font-family:"Clear Sans","Helvetica Neue",Arial,sans-serif;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+.wrap{max-width:500px;margin:0 auto;padding:14px 14px 24px}
+h1{font-size:clamp(44px,14vw,64px);margin:0;line-height:1}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button{background:#8f7a66;color:#f9f6f2;border:0;border-radius:4px;padding:10px 14px;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer}
+button.on{background:#f65e3b}
+#st{min-height:26px;font-weight:700;font-size:17px;margin:4px 0 10px}
+#bd{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border:4px solid #8f7a66;border-radius:6px;overflow:hidden;container-type:inline-size}
+.sq{display:flex;align-items:center;justify-content:center;position:relative;font-size:7.5vw;font-size:9cqw;line-height:1;cursor:pointer}
+.l{background:#f0d9b5}.d{background:#b58863}
+.w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 1px 1px #000}.k{color:#222}
+.sel{background:#f6f669}
+.last{box-shadow:inset 0 0 0 99px rgba(246,246,105,.45)}
+.chk{box-shadow:inset 0 0 0 99px rgba(255,70,70,.6)}
+.mv::after,.cap::after{content:"";position:absolute;border-radius:50%}
+.mv::after{width:30%;height:30%;background:rgba(40,40,40,.35)}
+.cap::after{width:90%;height:90%;border:4px solid rgba(40,40,40,.35)}
+.hint{margin-top:14px;font-size:14px}
+</style></head>
+<body><div class="wrap">
+<h1>Shaxmat</h1>
+<div class="row" id="lv"></div>
+<div id="st"></div>
+<div id="bd"></div>
+<div class="row"><button id="nw">Yangi o'yin</button><button id="un">↩ Qaytarish</button></div>
+<p class="hint">Piyoda oxirgi qatorga yetsa, ferzga aylanadi. Kompyuterga qarshi siz oq donalar bilan o'ynaysiz.</p>
+</div>
+<script>
+(()=>{
+const tg=window.Telegram&&Telegram.WebApp;
+if(tg){try{tg.ready();tg.expand();tg.disableVerticalSwipes&&tg.disableVerticalSwipes();tg.setHeaderColor('#faf8ef');tg.setBackgroundColor('#faf8ef')}catch(e){}}
+const RD=[[1,0],[-1,0],[0,1],[0,-1]],BD=[[1,1],[1,-1],[-1,1],[-1,-1]],KG=RD.concat(BD),
+KN=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]],
+GL={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'},V={p:100,n:320,b:330,r:500,q:900,k:0};
+const col=p=>p?(p<'a'?'w':'b'):'',ok=(r,f)=>r>=0&&r<8&&f>=0&&f<8,$=id=>document.getElementById(id);
+
+function start(){const b=[],bk='rnbqkbnr';for(let i=0;i<64;i++){const r=i>>3,f=i&7;b.push(r==0?bk[f]:r==1?'p':r==6?'P':r==7?bk[f].toUpperCase():'')}return{b,t:'w',c:'KQkq',ep:-1}}
+
+function attacked(b,s,by){
+ const r=s>>3,f=s&7,u=by==='w'?1:-1,c=x=>by==='w'?x:x.toLowerCase();
+ for(const df of[-1,1])if(ok(r+u,f+df)&&b[(r+u)*8+f+df]===c('P'))return true;
+ for(const[dr,df]of KN)if(ok(r+dr,f+df)&&b[(r+dr)*8+f+df]===c('N'))return true;
+ for(const[dr,df]of KG)if(ok(r+dr,f+df)&&b[(r+dr)*8+f+df]===c('K'))return true;
+ for(const[D,X]of[[RD,'R'],[BD,'B']])for(const[dr,df]of D){let rr=r+dr,ff=f+df;
+  while(ok(rr,ff)){const p=b[rr*8+ff];if(p){if(p===c(X)||p===c('Q'))return true;break}rr+=dr;ff+=df}}
+ return false}
+
+function gen(s){
+ const{b,t}=s,out=[],up=t==='w'?-1:1;
+ for(let i=0;i<64;i++){
+  const p=b[i];if(col(p)!==t)continue;
+  const r=i>>3,f=i&7,k=p.toLowerCase(),add=(to,x)=>out.push({f:i,t:to,x});
+  if(k==='p'){
+   const r1=r+up;if(r1<0||r1>7)continue;
+   if(!b[r1*8+f]){add(r1*8+f);if(r===(t==='w'?6:1)&&!b[(r+2*up)*8+f])add((r+2*up)*8+f,'d')}
+   for(const df of[-1,1]){const ff=f+df;if(ff<0||ff>7)continue;const to=r1*8+ff;
+    if(b[to]&&col(b[to])!==t)add(to);else if(to===s.ep)add(to,'e')}
+  }else if(k==='n'||k==='k'){
+   for(const[dr,df]of(k==='n'?KN:KG)){if(!ok(r+dr,f+df))continue;const to=(r+dr)*8+f+df;if(col(b[to])!==t)add(to)}
+  }else{
+   for(const[dr,df]of(k==='r'?RD:k==='b'?BD:KG)){let rr=r+dr,ff=f+df;
+    while(ok(rr,ff)){const to=rr*8+ff;if(!b[to])add(to);else{if(col(b[to])!==t)add(to);break}rr+=dr;ff+=df}}
+  }
+ }
+ const base=t==='w'?56:0,o=t==='w'?'b':'w',rk=t==='w'?'R':'r';
+ if(b[base+4]===(t==='w'?'K':'k')&&!attacked(b,base+4,o)){
+  if(s.c.includes(t==='w'?'K':'k')&&b[base+7]===rk&&!b[base+5]&&!b[base+6]&&!attacked(b,base+5,o)&&!attacked(b,base+6,o))out.push({f:base+4,t:base+6,x:'c'});
+  if(s.c.includes(t==='w'?'Q':'q')&&b[base]===rk&&!b[base+1]&&!b[base+2]&&!b[base+3]&&!attacked(b,base+3,o)&&!attacked(b,base+2,o))out.push({f:base+4,t:base+2,x:'c'});
+ }
+ return out}
+
+function apply(s,m){
+ const b=s.b.slice(),p=b[m.f],t=s.t;let c=s.c,ep=-1;
+ b[m.f]='';
+ if(m.x==='e')b[m.t+(t==='w'?8:-8)]='';
+ if(m.x==='c'){const rf=m.t>m.f?m.f+3:m.f-4,rt=m.t>m.f?m.f+1:m.f-1;b[rt]=b[rf];b[rf]=''}
+ b[m.t]=p;
+ if(p==='P'&&m.t<8)b[m.t]='Q';
+ if(p==='p'&&m.t>55)b[m.t]='q';
+ if(m.x==='d')ep=(m.f+m.t)>>1;
+ const lose={60:'KQ',4:'kq',63:'K',56:'Q',7:'k',0:'q'};
+ for(const q of[m.f,m.t])if(lose[q])c=c.split('').filter(x=>!lose[q].includes(x)).join('');
+ return{b,t:t==='w'?'b':'w',c,ep}}
+
+const inCheck=(s,c)=>attacked(s.b,s.b.indexOf(c==='w'?'K':'k'),c==='w'?'b':'w');
+const legal=s=>gen(s).filter(m=>!inCheck(apply(s,m),s.t));
+
+function ev(s){
+ let v=0;
+ for(let i=0;i<64;i++){const p=s.b[i];if(!p)continue;
+  const k=p.toLowerCase(),w=p<'a',r=i>>3,f=i&7,cen=3.5-Math.max(Math.abs(r-3.5),Math.abs(f-3.5));
+  let x=V[k];
+  if(k==='n'||k==='b')x+=cen*8;
+  if(k==='p')x+=(w?6-r:r-1)*6+cen*2;
+  v+=w?x:-x}
+ return s.t==='w'?v:-v}
+const cv=(s,m)=>s.b[m.t]?V[s.b[m.t].toLowerCase()]:(m.x==='e'?100:0);
+function search(s,d,a,bt){
+ const ms=legal(s);
+ if(!ms.length)return inCheck(s,s.t)?-99999-d:0;
+ if(d===0)return ev(s);
+ ms.sort((x,y)=>cv(s,y)-cv(s,x));
+ for(const m of ms){const v=-search(apply(s,m),d-1,-bt,-a);if(v>=bt)return bt;if(v>a)a=v}
+ return a}
+function best(s,d){
+ let bm,bv=-1e9;
+ for(const m of legal(s)){const v=-search(apply(s,m),d-1,-1e9,1e9)+Math.random()*(d===1?60:3);if(v>bv){bv=v;bm=m}}
+ return bm}
+
+let S,hist,mode=2,sel,dest,last,over,busy;
+const human=()=>mode===0||S.t==='w';
+function reset(){S=start();hist=[];sel=-1;dest=[];last=null;over=false;busy=false;render()}
+function render(){
+ const ms=legal(S),chk=inCheck(S,S.t),ks=chk?S.b.indexOf(S.t==='w'?'K':'k'):-1;
+ let h='';
+ for(let i=0;i<64;i++){
+  const p=S.b[i],r=i>>3,f=i&7,d=dest.find(m=>m.t===i);
+  let c='sq '+((r+f)%2?'d':'l')+(p?(p<'a'?' w':' k'):'');
+  c+=(i===sel?' sel':'')+(last&&(i===last.f||i===last.t)?' last':'')+(i===ks?' chk':'')+(d?(p||d.x==='e'?' cap':' mv'):'');
+  h+=`<div class="${c}" data-i="${i}">${p?GL[p.toLowerCase()]+'\uFE0E':''}</div>`}
+ $('bd').innerHTML=h;
+ let t;
+ if(!ms.length){over=true;t=chk?(mode&&S.t==='w'?'Mat! Kompyuter yutdi 😔':mode?'Mat! Siz yutdingiz 🎉':'Mat! '+(S.t==='w'?'Qora':'Oq')+' yutdi 🎉'):'Pat — durang 🤝'}
+ else{over=false;t=(mode?(S.t==='w'?'Sizning yurishingiz':"Kompyuter o'ylayapti..."):(S.t==='w'?'Oq yuradi':'Qora yuradi'))+(chk?' — Shoh!':'')}
+ $('st').textContent=t}
+function go(m){
+ hist.push({S,last});S=apply(S,m);last=m;sel=-1;dest=[];render();
+ if(!over&&mode&&S.t==='b'){busy=true;setTimeout(()=>{const x=best(S,mode);busy=false;go(x)},80)}}
+$('bd').onclick=e=>{
+ const q=e.target.closest('.sq');if(!q||over||busy||!human())return;
+ const i=+q.dataset.i,m=dest.find(m=>m.t===i);
+ if(sel>=0&&m)return go(m);
+ if(col(S.b[i])===S.t){sel=i;dest=legal(S).filter(m=>m.f===i)}else{sel=-1;dest=[]}
+ render()};
+$('nw').onclick=()=>{if(!busy)reset()};
+$('un').onclick=()=>{
+ if(busy||!hist.length)return;
+ do{({S,last}=hist.pop())}while(mode&&S.t!=='w'&&hist.length);
+ sel=-1;dest=[];render()};
+function lv(){
+ $('lv').innerHTML='';
+ [['Oson',1],["O'rta",2],['Qiyin',3],['2 kishi',0]].forEach(([n,v])=>{
+  const b=document.createElement('button');b.textContent=n;b.className=v===mode?'on':'';
+  b.onclick=()=>{if(busy)return;mode=v;lv();reset()};$('lv').appendChild(b)})}
+lv();reset();
+})();
+</script>
+</body></html>
